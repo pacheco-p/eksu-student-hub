@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {{ user.full_name }} - EKSU Student Hub
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- ======================================
+     NAVBAR
+====================================== -->
+
+<header class="navbar">
+
+    <a href="/" class="logo">
+        EKSU <span>STUDENT HUB</span>
+    </a>
+
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/marketplace">
+            Marketplace
+        </a>
+
+        {% if session.get("user_id") %}
+
+            <a href="/dashboard">
+                Dashboard
+            </a>
+
+        {% endif %}
+
+    </nav>
+
+
+    <div class="nav-buttons">
+
+        {% if session.get("user_id") %}
+
+            <a href="/logout">
+                Logout
+            </a>
+
+        {% else %}
+
+            <a href="/login">
+                Login
+            </a>
+
+            <a
+                href="/register"
+                class="signup-btn"
+            >
+                Join Hub
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</header>
+
+
+<!-- ======================================
+     PROFILE
+====================================== -->
+
+<main class="profile-page">
+
+
+    <!-- PROFILE HEADER -->
+
+    <section class="profile-header">
+
+
+        <div class="profile-avatar">
+
+            {{ user.full_name[0].upper() }}
+
+        </div>
+
+
+        <div class="profile-info">
+
+            <p class="small-title">
+                EKSU STUDENT HUB SELLER
+            </p>
+
+
+            <h1>
+                {{ user.full_name }}
+            </h1>
+
+
+            <p class="profile-username">
+                @{{ user.username }}
+            </p>
+
+
+            <p class="profile-member">
+
+                📅 Member since
+                {{ user.created_at[:10] }}
+
+            </p>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- PROFILE STATS -->
+
+    <section class="profile-stats">
+
+
+        <div>
+
+            <strong>
+                {{ listings|length }}
+            </strong>
+
+            <span>
+                Listings
+            </span>
+
+        </div>
+
+
+        <div>
+
+            <strong>
+                EKSU
+            </strong>
+
+            <span>
+                Student Hub
+            </span>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- LISTINGS -->
+
+    <section class="profile-listings">
+
+
+        <div class="section-heading">
+
+            <div>
+
+                <p class="small-title">
+                    MARKETPLACE
+                </p>
+
+                <h2>
+                    {{ user.full_name }}'s Listings
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        {% if listings %}
+
+
+            <div class="listing-grid">
+
+
+                {% for listing in listings %}
+
+
+                    <a
+                        href="{{ url_for(
+                            'view_listing',
+                            listing_id=listing.id
+                        ) }}"
+                        class="listing-card"
+                    >
+
+
+                        {% if listing.image_filename %}
+
+                            <img
+                                src="{{ url_for(
+                                    'static',
+                                    filename='uploads/' + listing.image_filename
+                                ) }}"
+                                alt="{{ listing.title }}"
+                            >
+
+                        {% else %}
+
+                            <div class="listing-placeholder">
+                                🛍️
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="listing-info">
+
+
+                            <span class="listing-category">
+
+                                {{ listing.category }}
+
+                            </span>
+
+
+                            <h3>
+
+                                {{ listing.title }}
+
+                            </h3>
+
+
+                            <strong>
+
+                                ₦{{ "{:,.0f}".format(
+                                    listing.price
+                                ) }}
+
+                            </strong>
+
+
+                            <p>
+
+                                📍 {{ listing.location }}
+
+                            </p>
+
+
+                        </div>
+
+
+                    </a>
+
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📦
+                </div>
+
+
+                <h3>
+                    No listings yet.
+                </h3>
+
+
+                <p>
+                    This seller hasn't posted
+                    anything yet.
+                </p>
+
+            </div>
+
+
+        {% endif %}
+
+
+    </section>
+
+
+</main>
+
+
+<footer>
+
+    <div class="footer-logo">
+        EKSU STUDENT HUB
+    </div>
+
+    <p>
+        Built for students. Powered by students.
+    </p>
+
+</footer>
+
+
+</body>
+
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Edit Listing - EKSU Student Hub
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<header class="navbar">
+
+    <a href="/" class="logo">
+        EKSU <span>STUDENT HUB</span>
+    </a>
+
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/marketplace">
+            Marketplace
+        </a>
+
+        <a href="/dashboard">
+            Dashboard
+        </a>
+
+    </nav>
+
+
+    <div class="nav-buttons">
+
+        <a href="/logout">
+            Logout
+        </a>
+
+    </div>
+
+</header>
+
+
+<main class="form-page">
+
+
+    <div class="form-container">
+
+
+        <p class="small-title">
+            MARKETPLACE
+        </p>
+
+
+        <h1>
+            Edit Listing
+        </h1>
+
+
+        <p class="form-subtitle">
+            Update your product or service
+            information.
+        </p>
+
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            class="listing-form"
+        >
+
+
+            <!-- TITLE -->
+
+            <label for="title">
+                Title
+            </label>
+
+            <input
+                type="text"
+                id="title"
+                name="title"
+                value="{{ listing.title }}"
+                required
+            >
+
+
+            <!-- CATEGORY -->
+
+            <label for="category">
+                Category
+            </label>
+
+            <select
+                id="category"
+                name="category"
+                required
+            >
+
+                <option
+                    value="Electronics"
+                    {% if listing.category == "Electronics" %}
+                        selected
+                    {% endif %}
+                >
+                    Electronics
+                </option>
+
+
+                <option
+                    value="Fashion"
+                    {% if listing.category == "Fashion" %}
+                        selected
+                    {% endif %}
+                >
+                    Fashion
+                </option>
+
+
+                <option
+                    value="Food"
+                    {% if listing.category == "Food" %}
+                        selected
+                    {% endif %}
+                >
+                    Food
+                </option>
+
+
+                <option
+                    value="Accommodation"
+                    {% if listing.category == "Accommodation" %}
+                        selected
+                    {% endif %}
+                >
+                    Accommodation
+                </option>
+
+
+                <option
+                    value="Academic"
+                    {% if listing.category == "Academic" %}
+                        selected
+                    {% endif %}
+                >
+                    Academic
+                </option>
+
+
+                <option
+                    value="Services"
+                    {% if listing.category == "Services" %}
+                        selected
+                    {% endif %}
+                >
+                    Services
+                </option>
+
+
+                <option
+                    value="Other"
+                    {% if listing.category == "Other" %}
+                        selected
+                    {% endif %}
+                >
+                    Other
+                </option>
+
+            </select>
+
+
+            <!-- PRICE -->
+
+            <label for="price">
+                Price (₦)
+            </label>
+
+            <input
+                type="number"
+                id="price"
+                name="price"
+                value="{{ listing.price }}"
+                min="0"
+                required
+            >
+
+
+            <!-- LOCATION -->
+
+            <label for="location">
+                Location
+            </label>
+
+            <input
+                type="text"
+                id="location"
+                name="location"
+                value="{{ listing.location }}"
+                required
+            >
+
+
+            <!-- DESCRIPTION -->
+
+            <label for="description">
+                Description
+            </label>
+
+            <textarea
+                id="description"
+                name="description"
+                rows="6"
+                required
+            >{{ listing.description }}</textarea>
+
+
+            <!-- CURRENT IMAGE -->
+
+            {% if listing.image_filename %}
+
+                <div class="current-image">
+
+                    <p>
+                        Current image
+                    </p>
+
+                    <img
+                        src="{{ url_for(
+                            'static',
+                            filename='uploads/' + listing.image_filename
+                        ) }}"
+                        alt="{{ listing.title }}"
+                    >
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- NEW IMAGE -->
+
+            <label for="image">
+                Replace Image
+                <span class="optional">
+                    (optional)
+                </span>
+            </label>
+
+            <input
+                type="file"
+                id="image"
+                name="image"
+                accept="image/png,image/jpeg,image/webp"
+            >
+
+
+            <!-- BUTTONS -->
+
+            <div class="form-actions">
+
+                <a
+                    href="/dashboard"
+                    class="cancel-btn"
+                >
+                    Cancel
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                >
+                    Save Changes
+                </button>
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+</main>
+
+
+<footer>
+
+    <div class="footer-logo">
+        EKSU STUDENT HUB
+    </div>
+
+    <p>
+        Built for students. Powered by students.
+    </p>
+
+</footer>
+
+
+</body>
+
+</html>

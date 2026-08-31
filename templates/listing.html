@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+
+    <!-- ======================================
+         BASIC PAGE INFORMATION
+    ======================================= -->
+
+    <title>
+        {{ listing.title }} - EKSU Student Hub
+    </title>
+
+
+    <meta
+        name="description"
+        content="{{ listing.title }} for ₦{{ '{:,.0f}'.format(listing.price) }} in {{ listing.location }}. Find it on EKSU Student Hub."
+    >
+
+
+    <!-- ======================================
+         OPEN GRAPH
+         Used by WhatsApp, Facebook, etc.
+    ======================================= -->
+
+    <meta
+        property="og:type"
+        content="website"
+    >
+
+
+    <meta
+        property="og:title"
+        content="{{ listing.title }} - ₦{{ '{:,.0f}'.format(listing.price) }}"
+    >
+
+
+    <meta
+        property="og:description"
+        content="📍 {{ listing.location }} • Find this listing on EKSU Student Hub."
+    >
+
+
+    <meta
+        property="og:url"
+        content="{{ request.url }}"
+    >
+
+
+    {% if listing.image_filename %}
+
+        <meta
+            property="og:image"
+            content="{{ url_for(
+                'static',
+                filename='uploads/' + listing.image_filename,
+                _external=True
+            ) }}"
+        >
+
+    {% endif %}
+
+
+    <meta
+        property="og:site_name"
+        content="EKSU Student Hub"
+    >
+
+
+    <!-- ======================================
+         TWITTER / X CARD
+    ======================================= -->
+
+    <meta
+        name="twitter:card"
+        content="summary_large_image"
+    >
+
+
+    <meta
+        name="twitter:title"
+        content="{{ listing.title }} - ₦{{ '{:,.0f}'.format(listing.price) }}"
+    >
+
+
+    <meta
+        name="twitter:description"
+        content="📍 {{ listing.location }} • EKSU Student Hub"
+    >
+
+
+    {% if listing.image_filename %}
+
+        <meta
+            name="twitter:image"
+            content="{{ url_for(
+                'static',
+                filename='uploads/' + listing.image_filename,
+                _external=True
+            ) }}"
+        >
+
+    {% endif %}
+
+
+    <!-- ======================================
+         STYLESHEET
+    ======================================= -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- ======================================
+     NAVBAR
+====================================== -->
+
+<header class="navbar">
+
+    <a href="/" class="logo">
+        EKSU <span>STUDENT HUB</span>
+    </a>
+
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/marketplace">
+            Marketplace
+        </a>
+
+    </nav>
+
+</header>
+
+
+<!-- ======================================
+     LISTING DETAILS
+====================================== -->
+
+<section class="listing-detail">
+
+
+    <!-- ==================================
+         IMAGE
+    =================================== -->
+
+    <div class="detail-image">
+
+
+        {% if listing.image_filename %}
+
+            <img
+                src="{{ url_for(
+                    'static',
+                    filename='uploads/' + listing.image_filename
+                ) }}"
+                alt="{{ listing.title }}"
+            >
+
+        {% else %}
+
+            <div class="listing-placeholder">
+                🛍️
+            </div>
+
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- ==================================
+         CONTENT
+    =================================== -->
+
+    <div class="detail-content">
+
+
+        <span class="listing-category">
+            {{ listing.category }}
+        </span>
+
+
+        <h1>
+            {{ listing.title }}
+        </h1>
+
+
+        <div class="detail-price">
+
+            ₦{{ "{:,.0f}".format(
+                listing.price
+            ) }}
+
+        </div>
+
+
+        <p class="detail-location">
+            📍 {{ listing.location }}
+        </p>
+
+
+        <hr>
+
+
+        <!-- DESCRIPTION -->
+
+        <h3>
+            Description
+        </h3>
+
+
+        <p class="description">
+            {{ listing.description }}
+        </p>
+
+
+        <!-- ==================================
+             SELLER
+        =================================== -->
+
+        <div class="seller-box">
+
+
+            <p class="small-title">
+                SELLER
+            </p>
+
+
+            <strong>
+                {{ listing.full_name }}
+            </strong>
+
+
+            <p>
+                @{{ listing.username }}
+            </p>
+
+
+            <a
+                href="{{ url_for(
+                    'seller_profile',
+                    username=listing.username
+                ) }}"
+                class="seller-profile-button"
+            >
+                View Seller Profile
+            </a>
+
+
+        </div>
+
+
+        <!-- ==================================
+             ACTIONS
+        =================================== -->
+
+        <div class="listing-actions">
+
+
+            <!-- CONTACT -->
+
+            <a
+                href="mailto:{{ listing.email }}"
+                class="primary-btn contact-btn"
+            >
+                ✉️ Contact Seller
+            </a>
+
+
+            <!-- WHATSAPP -->
+
+            <a
+                href="#"
+                onclick="shareToWhatsApp(); return false;"
+                class="whatsapp-btn"
+            >
+                🟢 WhatsApp
+            </a>
+
+
+            <!-- NATIVE SHARE -->
+
+            <button
+                type="button"
+                onclick="shareListing()"
+                class="secondary-btn share-btn"
+            >
+                📲 Share Listing
+            </button>
+
+
+            <!-- COPY LINK -->
+
+            <button
+                type="button"
+                onclick="copyListingLink()"
+                class="copy-link-btn"
+                id="copyLinkButton"
+            >
+                📋 Copy Link
+            </button>
+
+
+        </div>
+
+
+        <!-- SHARE STATUS -->
+
+        <p
+            id="shareStatus"
+            class="share-status"
+        ></p>
+
+
+    </div>
+
+
+</section>
+
+
+<!-- ======================================
+     SHARE JAVASCRIPT
+====================================== -->
+
+<script>
+
+
+/* ==========================================
+   LISTING DATA
+========================================== */
+
+const listingTitle =
+    {{ listing.title|tojson }};
+
+
+const listingPrice =
+    "₦{{ '{:,.0f}'.format(listing.price) }}";
+
+
+const listingLocation =
+    {{ listing.location|tojson }};
+
+
+const listingUrl =
+    window.location.href;
+
+
+/* ==========================================
+   SHARE TEXT
+========================================== */
+
+const shareText =
+`🛍️ ${listingTitle}
+
+💰 ${listingPrice}
+
+📍 ${listingLocation}
+
+Check out this listing on EKSU Student Hub 👇`;
+
+
+/* ==========================================
+   NATIVE SHARE
+========================================== */
+
+async function shareListing() {
+
+    const shareData = {
+
+        title: listingTitle,
+
+        text: shareText,
+
+        url: listingUrl
+
+    };
+
+
+    try {
+
+        if (navigator.share) {
+
+            await navigator.share(
+                shareData
+            );
+
+            showShareStatus(
+                "Listing shared successfully! 🚀"
+            );
+
+        } else {
+
+            await copyListingLink();
+
+            showShareStatus(
+                "Sharing isn't supported here. Link copied instead! 📋"
+            );
+
+        }
+
+    } catch (error) {
+
+        /*
+         * User cancelled the native share menu.
+         * We don't need to show an error.
+         */
+
+        if (
+            error.name !==
+            "AbortError"
+        ) {
+
+            console.error(
+                "Share failed:",
+                error
+            );
+
+            showShareStatus(
+                "Unable to share right now."
+            );
+
+        }
+
+    }
+
+}
+
+
+/* ==========================================
+   WHATSAPP SHARE
+========================================== */
+
+function shareToWhatsApp() {
+
+    const description =
+        {{ listing.description|tojson }};
+
+    const whatsappMessage =
+`🛍️ *${listingTitle}*
+
+💰 *${listingPrice}*
+
+📍 ${listingLocation}
+
+${description}
+
+🔗 View this listing:
+${listingUrl}
+
+━━━━━━━━━━━━━━━━━━
+🏫 *EKSU STUDENT HUB*
+Buy. Sell. Connect.
+━━━━━━━━━━━━━━━━━━`;
+
+
+    const whatsappUrl =
+        "https://wa.me/?text=" +
+        encodeURIComponent(
+            whatsappMessage
+        );
+
+
+    window.open(
+        whatsappUrl,
+        "_blank"
+    );
+
+}
+
+
+/* ==========================================
+   COPY LINK
+========================================== */
+
+async function copyListingLink() {
+
+
+    try {
+
+
+        await navigator.clipboard.writeText(
+            listingUrl
+        );
+
+
+        const button =
+            document.getElementById(
+                "copyLinkButton"
+            );
+
+
+        button.textContent =
+            "✅ Link Copied";
+
+
+        showShareStatus(
+            "Listing link copied! 📋"
+        );
+
+
+        setTimeout(
+            function () {
+
+                button.textContent =
+                    "📋 Copy Link";
+
+            },
+            2500
+        );
+
+
+    } catch (error) {
+
+
+        /*
+         * Fallback for browsers that don't
+         * support navigator.clipboard.
+         */
+
+        const temporaryInput =
+            document.createElement(
+                "input"
+            );
+
+
+        temporaryInput.value =
+            listingUrl;
+
+
+        document.body.appendChild(
+            temporaryInput
+        );
+
+
+        temporaryInput.select();
+
+
+        document.execCommand(
+            "copy"
+        );
+
+
+        document.body.removeChild(
+            temporaryInput
+        );
+
+
+        showShareStatus(
+            "Listing link copied! 📋"
+        );
+
+    }
+
+}
+
+
+/* ==========================================
+   STATUS MESSAGE
+========================================== */
+
+function showShareStatus(message) {
+
+
+    const status =
+        document.getElementById(
+            "shareStatus"
+        );
+
+
+    status.textContent =
+        message;
+
+
+    setTimeout(
+        function () {
+
+            status.textContent =
+                "";
+
+        },
+        3000
+    );
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>

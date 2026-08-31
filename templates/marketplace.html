@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Marketplace - EKSU Student Hub</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- ======================================
+     NAVBAR
+====================================== -->
+
+<header class="navbar">
+
+    <a href="/" class="logo">
+        EKSU <span>STUDENT HUB</span>
+    </a>
+
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+        <a href="/marketplace">
+            Marketplace
+        </a>
+
+        <a href="#">
+            Announcements
+        </a>
+
+        <a href="#">
+            Leadership
+        </a>
+
+    </nav>
+
+
+    <div class="nav-buttons">
+
+        {% if session.get("user_id") %}
+
+            <a href="/dashboard">
+                Dashboard
+            </a>
+
+            <a
+                href="/create-listing"
+                class="signup-btn"
+            >
+                Sell Something
+            </a>
+
+            <a href="/logout">
+                Logout
+            </a>
+
+        {% else %}
+
+            <a href="/login">
+                Login
+            </a>
+
+            <a
+                href="/register"
+                class="signup-btn"
+            >
+                Join Hub
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</header>
+
+
+<!-- ======================================
+     MARKETPLACE HEADER
+====================================== -->
+
+<section class="marketplace-header">
+
+    <p class="small-title">
+        EKSU MARKETPLACE
+    </p>
+
+
+    <h1>
+        Buy. Sell. Connect.
+    </h1>
+
+
+    <p>
+        Discover products and services
+        from fellow students.
+    </p>
+
+
+    {% if session.get("user_id") %}
+
+        <a
+            href="/create-listing"
+            class="primary-btn"
+        >
+            + Create Listing
+        </a>
+
+    {% else %}
+
+        <a
+            href="/login"
+            class="primary-btn"
+        >
+            Login to Sell
+        </a>
+
+    {% endif %}
+
+</section>
+
+
+<!-- ======================================
+     SEARCH & FILTERS
+====================================== -->
+
+<section class="marketplace-tools">
+
+    <form
+        method="GET"
+        action="/marketplace"
+        class="search-form"
+    >
+
+        <div class="search-main">
+
+            <input
+                type="search"
+                name="search"
+                value="{{ search }}"
+                placeholder="Search products, services..."
+            >
+
+            <button type="submit">
+                🔎 Search
+            </button>
+
+        </div>
+
+
+        <div class="filter-grid">
+
+
+            <!-- CATEGORY -->
+
+            <select name="category">
+
+                <option value="">
+                    All Categories
+                </option>
+
+
+                <option
+                    value="Electronics"
+                    {% if category == "Electronics" %}
+                        selected
+                    {% endif %}
+                >
+                    Electronics
+                </option>
+
+
+                <option
+                    value="Fashion"
+                    {% if category == "Fashion" %}
+                        selected
+                    {% endif %}
+                >
+                    Fashion
+                </option>
+
+
+                <option
+                    value="Food"
+                    {% if category == "Food" %}
+                        selected
+                    {% endif %}
+                >
+                    Food
+                </option>
+
+
+                <option
+                    value="Accommodation"
+                    {% if category == "Accommodation" %}
+                        selected
+                    {% endif %}
+                >
+                    Accommodation
+                </option>
+
+
+                <option
+                    value="Academic"
+                    {% if category == "Academic" %}
+                        selected
+                    {% endif %}
+                >
+                    Academic
+                </option>
+
+
+                <option
+                    value="Services"
+                    {% if category == "Services" %}
+                        selected
+                    {% endif %}
+                >
+                    Services
+                </option>
+
+
+                <option
+                    value="Other"
+                    {% if category == "Other" %}
+                        selected
+                    {% endif %}
+                >
+                    Other
+                </option>
+
+            </select>
+
+
+            <!-- LOCATION -->
+
+            <input
+                type="text"
+                name="location"
+                value="{{ location }}"
+                placeholder="Location"
+            >
+
+
+            <!-- MINIMUM PRICE -->
+
+            <input
+                type="number"
+                name="min_price"
+                value="{{ min_price }}"
+                placeholder="Min ₦"
+                min="0"
+            >
+
+
+            <!-- MAXIMUM PRICE -->
+
+            <input
+                type="number"
+                name="max_price"
+                value="{{ max_price }}"
+                placeholder="Max ₦"
+                min="0"
+            >
+
+
+            <!-- FILTER -->
+
+            <button
+                type="submit"
+                class="filter-btn"
+            >
+                Filter
+            </button>
+
+
+            <!-- CLEAR -->
+
+            <a
+                href="/marketplace"
+                class="clear-filter"
+            >
+                Clear
+            </a>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+<!-- ======================================
+     RESULTS
+====================================== -->
+
+<section class="marketplace">
+
+    <div class="section-heading">
+
+        <div>
+
+            <p class="small-title">
+                RESULTS
+            </p>
+
+
+            <h2>
+
+                {% if search or category or location or min_price or max_price %}
+
+                    Search Results
+
+                {% else %}
+
+                    Recent Listings
+
+                {% endif %}
+
+            </h2>
+
+        </div>
+
+    </div>
+
+
+    {% if listings %}
+
+
+        <div class="listing-grid">
+
+
+            {% for listing in listings %}
+
+
+                <!-- ==================================
+                     LISTING CARD
+                =================================== -->
+
+                <div class="listing-card">
+
+
+                    <!-- PRODUCT LINK -->
+
+                    <a
+                        href="{{ url_for(
+                            'view_listing',
+                            listing_id=listing.id
+                        ) }}"
+                        class="listing-main-link"
+                    >
+
+
+                        <!-- IMAGE -->
+
+                        {% if listing.image_filename %}
+
+                            <img
+                                src="{{ url_for(
+                                    'static',
+                                    filename='uploads/' + listing.image_filename
+                                ) }}"
+                                alt="{{ listing.title }}"
+                            >
+
+                        {% else %}
+
+                            <div class="listing-placeholder">
+                                🛍️
+                            </div>
+
+                        {% endif %}
+
+
+                        <!-- PRODUCT INFORMATION -->
+
+                        <div class="listing-info">
+
+
+                            <span class="listing-category">
+                                {{ listing.category }}
+                            </span>
+
+
+                            <h3>
+                                {{ listing.title }}
+                            </h3>
+
+
+                            <strong>
+                                ₦{{ "{:,.0f}".format(
+                                    listing.price
+                                ) }}
+                            </strong>
+
+
+                            <p>
+                                📍 {{ listing.location }}
+                            </p>
+
+
+                        </div>
+
+
+                    </a>
+
+
+                    <!-- ==================================
+                         SELLER PROFILE LINK
+                    =================================== -->
+
+                    <div class="seller-profile-link">
+
+                        <a
+                            href="{{ url_for(
+                                'seller_profile',
+                                username=listing.username
+                            ) }}"
+                        >
+                            👤 {{ listing.full_name }}
+                        </a>
+
+                    </div>
+
+
+                </div>
+
+
+            {% endfor %}
+
+
+        </div>
+
+
+    {% else %}
+
+
+        <!-- ==================================
+             EMPTY STATE
+        =================================== -->
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                🔎
+            </div>
+
+
+            <h3>
+                Nothing found.
+            </h3>
+
+
+            <p>
+                Try another search or change
+                your filters.
+            </p>
+
+
+            <a
+                href="/marketplace"
+                class="primary-btn"
+            >
+                Clear Search
+            </a>
+
+        </div>
+
+
+    {% endif %}
+
+
+</section>
+
+
+<!-- ======================================
+     FOOTER
+====================================== -->
+
+<footer>
+
+    <div class="footer-logo">
+        EKSU STUDENT HUB
+    </div>
+
+
+    <p>
+        Built for students. Powered by students.
+    </p>
+
+</footer>
+
+
+</body>
+
+</html>

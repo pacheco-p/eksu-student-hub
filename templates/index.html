@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        EKSU Student Hub
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- ======================================
+     NAVBAR
+====================================== -->
+
+<header class="navbar">
+
+
+    <a href="/" class="logo">
+        EKSU <span>STUDENT HUB</span>
+    </a>
+
+
+    <nav>
+
+        <a href="/">
+            Home
+        </a>
+
+
+        <a href="/marketplace">
+            Marketplace
+        </a>
+
+
+        <a href="/announcements">
+            Announcements
+        </a>
+
+
+        <a href="/leadership">
+            Leadership
+        </a>
+
+    </nav>
+
+
+    <div class="nav-buttons">
+
+
+        {% if session.get("user_id") %}
+
+
+            <a href="/dashboard">
+                Dashboard
+            </a>
+
+
+            <a
+                href="/create-listing"
+                class="signup-btn"
+            >
+                Sell Something
+            </a>
+
+
+            <a href="/logout">
+                Logout
+            </a>
+
+
+        {% else %}
+
+
+            <a
+                href="/login"
+                class="login-btn"
+            >
+                Login
+            </a>
+
+
+            <a
+                href="/register"
+                class="signup-btn"
+            >
+                Join Hub
+            </a>
+
+
+        {% endif %}
+
+
+    </div>
+
+
+</header>
+
+
+
+<!-- ======================================
+     HERO
+====================================== -->
+
+<section class="hero">
+
+
+    <div class="hero-content">
+
+
+        <p class="eyebrow">
+            EKSU STUDENTS • EVERYTHING IN ONE PLACE
+        </p>
+
+
+        <h1>
+
+            Your campus.
+
+            <span>
+                Your marketplace.
+            </span>
+
+            Your hub.
+
+        </h1>
+
+
+        <p class="hero-text">
+
+            Buy, sell, discover opportunities,
+            find services, stay updated and
+            connect with fellow students.
+
+        </p>
+
+
+        <div class="hero-buttons">
+
+
+            <a
+                href="/marketplace"
+                class="primary-btn"
+            >
+                Explore Marketplace
+            </a>
+
+
+            {% if session.get("user_id") %}
+
+
+                <a
+                    href="/create-listing"
+                    class="secondary-btn"
+                >
+                    Post an Item
+                </a>
+
+
+            {% else %}
+
+
+                <a
+                    href="/login"
+                    class="secondary-btn"
+                >
+                    Post an Item
+                </a>
+
+
+            {% endif %}
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- ======================================
+     CATEGORIES
+====================================== -->
+
+<section class="categories">
+
+
+    <div class="section-heading">
+
+
+        <div>
+
+            <p class="small-title">
+                DISCOVER
+            </p>
+
+
+            <h2>
+                What are you looking for?
+            </h2>
+
+        </div>
+
+
+        <a href="/marketplace">
+            View all →
+        </a>
+
+
+    </div>
+
+
+
+    <div class="category-grid">
+
+
+        <!-- MARKETPLACE -->
+
+        <a
+            href="/marketplace"
+            class="category-card"
+        >
+
+            <div class="category-icon">
+                🛍️
+            </div>
+
+            <h3>
+                Marketplace
+            </h3>
+
+            <p>
+                Buy & sell with students.
+            </p>
+
+        </a>
+
+
+
+        <!-- ACCOMMODATION -->
+
+        <a
+            href="/marketplace?category=Accommodation"
+            class="category-card"
+        >
+
+            <div class="category-icon">
+                🏠
+            </div>
+
+            <h3>
+                Accommodation
+            </h3>
+
+            <p>
+                Find rooms around campus.
+            </p>
+
+        </a>
+
+
+
+        <!-- ACADEMICS -->
+
+        <a
+            href="/marketplace?category=Academic"
+            class="category-card"
+        >
+
+            <div class="category-icon">
+                📚
+            </div>
+
+            <h3>
+                Academics
+            </h3>
+
+            <p>
+                Materials, past questions & more.
+            </p>
+
+        </a>
+
+
+
+        <!-- SERVICES -->
+
+        <a
+            href="/marketplace?category=Services"
+            class="category-card"
+        >
+
+            <div class="category-icon">
+                💼
+            </div>
+
+            <h3>
+                Services
+            </h3>
+
+            <p>
+                Discover student businesses.
+            </p>
+
+        </a>
+
+
+
+        <!-- FOOD -->
+
+        <a
+            href="/marketplace?category=Food"
+            class="category-card"
+        >
+
+            <div class="category-icon">
+                🍔
+            </div>
+
+            <h3>
+                Food
+            </h3>
+
+            <p>
+                Food vendors around campus.
+            </p>
+
+        </a>
+
+
+
+        <!-- ANNOUNCEMENTS -->
+
+        <a
+            href="/announcements"
+            class="category-card"
+        >
+
+            <div class="category-icon">
+                📢
+            </div>
+
+            <h3>
+                Announcements
+            </h3>
+
+            <p>
+                What's happening on campus.
+            </p>
+
+        </a>
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- ======================================
+     TRENDING
+====================================== -->
+
+<section class="trending">
+
+
+    <div class="section-heading">
+
+
+        <div>
+
+            <p class="small-title">
+                TRENDING NOW
+            </p>
+
+
+            <h2>
+                Popular on Student Hub
+            </h2>
+
+        </div>
+
+
+        <a href="/marketplace">
+            See marketplace →
+        </a>
+
+
+    </div>
+
+
+
+    <div class="empty-state">
+
+
+        <div class="empty-icon">
+            🚀
+        </div>
+
+
+        <h3>
+            The marketplace is coming alive.
+        </h3>
+
+
+        <p>
+
+            Be one of the first students
+            to post a product, service
+            or opportunity.
+
+        </p>
+
+
+
+        {% if session.get("user_id") %}
+
+
+            <a
+                href="/create-listing"
+                class="primary-btn"
+            >
+                Create a Listing
+            </a>
+
+
+        {% else %}
+
+
+            <a
+                href="/login"
+                class="primary-btn"
+            >
+                Login to Create a Listing
+            </a>
+
+
+        {% endif %}
+
+
+    </div>
+
+
+</section>
+
+
+
+<!-- ======================================
+     FOOTER
+====================================== -->
+
+<footer>
+
+
+    <div class="footer-logo">
+        EKSU STUDENT HUB
+    </div>
+
+
+    <p>
+        Built for students. Powered by students.
+    </p>
+
+
+    <p class="copyright">
+        © 2026 EKSU Student Hub
+    </p>
+
+
+</footer>
+
+
+</body>
+
+</html>

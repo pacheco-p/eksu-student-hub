@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Create Listing</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/style.css'
+        ) }}"
+    >
+
+</head>
+
+<body>
+
+
+<section class="auth-page">
+
+    <div class="auth-box">
+
+        <a href="/" class="auth-logo">
+            EKSU STUDENT HUB
+        </a>
+
+
+        <h1>
+            Create a listing
+        </h1>
+
+
+        <p class="auth-subtitle">
+            Put your product or service
+            in front of EKSU students.
+        </p>
+
+
+        {% with messages =
+            get_flashed_messages()
+        %}
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="flash-message">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+
+            <label>
+                Title
+            </label>
+
+            <input
+                type="text"
+                name="title"
+                placeholder="e.g. HP EliteBook 840 G7"
+                required
+            >
+
+
+            <label>
+                Category
+            </label>
+
+            <select
+                name="category"
+                required
+            >
+
+                <option value="">
+                    Select category
+                </option>
+
+                <option>
+                    Electronics
+                </option>
+
+                <option>
+                    Fashion
+                </option>
+
+                <option>
+                    Food
+                </option>
+
+                <option>
+                    Accommodation
+                </option>
+
+                <option>
+                    Academic
+                </option>
+
+                <option>
+                    Services
+                </option>
+
+                <option>
+                    Other
+                </option>
+
+            </select>
+
+
+            <label>
+                Price (₦)
+            </label>
+
+            <input
+                type="number"
+                name="price"
+                placeholder="250000"
+                min="0"
+                required
+            >
+
+
+            <label>
+                Location
+            </label>
+
+            <input
+                type="text"
+                name="location"
+                placeholder="e.g. Adebayo, EKSU"
+                required
+            >
+
+
+            <label>
+                Description
+            </label>
+
+            <textarea
+                name="description"
+                placeholder="Tell students about your product..."
+                rows="6"
+                required
+            ></textarea>
+
+
+            <label>
+                Product Image
+                <span class="optional">
+                    (optional)
+                </span>
+            </label>
+
+            <input
+                type="file"
+                name="image"
+                accept="image/png, image/jpeg, image/webp"
+            >
+
+
+            <button
+                type="submit"
+                class="auth-submit"
+            >
+                Publish Listing
+            </button>
+
+        </form>
+
+
+        <p class="auth-footer">
+
+            <a href="/marketplace">
+                ← Back to Marketplace
+            </a>
+
+        </p>
+
+    </div>
+
+</section>
+
+
+</body>
+
+</html>
