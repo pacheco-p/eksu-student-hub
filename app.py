@@ -1337,9 +1337,10 @@ def delete_listing(listing_id):
 # START APPLICATION
 # ==========================================
 
-if __name__ == "__main__":
+init_db()
 
-    init_db()
+
+if __name__ == "__main__":
 
     app.run(
         debug=False
