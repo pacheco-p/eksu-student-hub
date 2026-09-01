@@ -8,9 +8,11 @@ from flask import (
     session
 )
 
-import sqlite3
 import os
 import uuid
+import psycopg2
+
+from psycopg2.extras import RealDictCursor
 
 from dotenv import load_dotenv
 
@@ -37,7 +39,14 @@ app.secret_key = os.environ.get(
     "dev-secret-key"
 )
 
-DATABASE = "database.db"
+
+# PostgreSQL connection URL
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+
+# ==========================================
+# UPLOAD CONFIGURATION
+# ==========================================
 
 UPLOAD_FOLDER = "static/uploads"
 
@@ -53,9 +62,10 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # Maximum upload size = 5MB
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
-
-# Make sure upload folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(
+    UPLOAD_FOLDER,
+    exist_ok=True
+)
 
 
 # ==========================================
@@ -64,9 +74,15 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def get_db():
 
-    conn = sqlite3.connect(DATABASE)
+    if not DATABASE_URL:
 
-    conn.row_factory = sqlite3.Row
+        raise RuntimeError(
+            "DATABASE_URL environment variable is not configured."
+        )
+
+    conn = psycopg2.connect(
+        DATABASE_URL
+    )
 
     return conn
 
@@ -80,11 +96,13 @@ def allowed_file(filename):
     return (
         "." in filename
         and
-        filename.rsplit(".", 1)[1].lower()
+        filename.rsplit(
+            ".",
+            1
+        )[1].lower()
         in ALLOWED_EXTENSIONS
     )
-
-
+    
 # ==========================================
 # DATABASE INITIALIZATION
 # ==========================================
@@ -93,15 +111,17 @@ def init_db():
 
     conn = get_db()
 
+    cursor = conn.cursor()
+
 
     # ======================================
     # USERS TABLE
     # ======================================
 
-    conn.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
 
             full_name TEXT NOT NULL,
 
@@ -122,10 +142,10 @@ def init_db():
     # LISTINGS TABLE
     # ======================================
 
-    conn.execute("""
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS listings (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
 
             user_id INTEGER NOT NULL,
 
@@ -156,28 +176,16 @@ def init_db():
     # ======================================
     # DATABASE MIGRATION
     # ======================================
-    #
-    # Your existing database already has
-    # the listings table without image_filename.
-    #
-    # This safely adds the new column.
-    #
 
-    try:
-
-        conn.execute("""
-            ALTER TABLE listings
-            ADD COLUMN image_filename TEXT
-        """)
-
-    except sqlite3.OperationalError:
-
-        # Column already exists.
-        pass
+    cursor.execute("""
+        ALTER TABLE listings
+        ADD COLUMN IF NOT EXISTS image_filename TEXT
+    """)
 
 
     conn.commit()
 
+    cursor.close()
     conn.close()
 
 
@@ -192,13 +200,18 @@ def login_required(route_function):
 
         if "user_id" not in session:
 
-            flash("Please login first.")
+            flash(
+                "Please login first."
+            )
 
             return redirect(
                 url_for("login")
             )
 
-        return route_function(*args, **kwargs)
+        return route_function(
+            *args,
+            **kwargs
+        )
 
     return wrapper
 
@@ -280,7 +293,9 @@ def register():
 
         try:
 
-            conn.execute("""
+            cursor = conn.cursor()
+
+            cursor.execute("""
                 INSERT INTO users
                 (
                     full_name,
@@ -289,7 +304,7 @@ def register():
                     password
                 )
 
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s)
 
             """, (
                 full_name,
@@ -301,8 +316,12 @@ def register():
 
             conn.commit()
 
+            cursor.close()
 
-        except sqlite3.IntegrityError:
+
+        except psycopg2.IntegrityError:
+
+            conn.rollback()
 
             conn.close()
 
@@ -356,19 +375,27 @@ def login():
 
         conn = get_db()
 
+        cursor = conn.cursor(
+            cursor_factory=RealDictCursor
+        )
 
-        user = conn.execute("""
+
+        cursor.execute("""
             SELECT *
 
             FROM users
 
-            WHERE username = ?
+            WHERE username = %s
 
         """, (
             username,
-        )).fetchone()
+        ))
 
 
+        user = cursor.fetchone()
+
+
+        cursor.close()
         conn.close()
 
 
@@ -419,8 +446,7 @@ def logout():
     return redirect(
         url_for("home")
     )
-
-
+    
 # ==========================================
 # MARKETPLACE
 # ==========================================
@@ -456,6 +482,10 @@ def marketplace():
 
     conn = get_db()
 
+    cursor = conn.cursor(
+        cursor_factory=RealDictCursor
+    )
+
 
     query = """
         SELECT
@@ -487,8 +517,8 @@ def marketplace():
 
         query += """
             AND (
-                listings.title LIKE ?
-                OR listings.description LIKE ?
+                listings.title ILIKE %s
+                OR listings.description ILIKE %s
             )
         """
 
@@ -508,10 +538,12 @@ def marketplace():
     if category:
 
         query += """
-            AND listings.category = ?
+            AND listings.category = %s
         """
 
-        params.append(category)
+        params.append(
+            category
+        )
 
 
     # -------------------------------
@@ -521,7 +553,7 @@ def marketplace():
     if location:
 
         query += """
-            AND listings.location LIKE ?
+            AND listings.location ILIKE %s
         """
 
         params.append(
@@ -538,7 +570,7 @@ def marketplace():
         try:
 
             query += """
-                AND listings.price >= ?
+                AND listings.price >= %s
             """
 
             params.append(
@@ -559,7 +591,7 @@ def marketplace():
         try:
 
             query += """
-                AND listings.price <= ?
+                AND listings.price <= %s
             """
 
             params.append(
@@ -580,12 +612,16 @@ def marketplace():
     """
 
 
-    listings = conn.execute(
+    cursor.execute(
         query,
         params
-    ).fetchall()
+    )
 
 
+    listings = cursor.fetchall()
+
+
+    cursor.close()
     conn.close()
 
 
@@ -605,7 +641,6 @@ def marketplace():
         max_price=max_price
     )
 
-
 # ==========================================
 # USER DASHBOARD
 # ==========================================
@@ -616,42 +651,70 @@ def dashboard():
 
     conn = get_db()
 
+    cursor = conn.cursor(
+        cursor_factory=RealDictCursor
+    )
+
+
     # Get current user's information
-    user = conn.execute("""
+
+    cursor.execute("""
         SELECT
             id,
             full_name,
             username,
             email,
             created_at
+
         FROM users
-        WHERE id = ?
+
+        WHERE id = %s
+
     """, (
         session["user_id"],
-    )).fetchone()
+    ))
 
 
-    # Get all listings belonging to the user
-    listings = conn.execute("""
+    user = cursor.fetchone()
+
+
+    # Get user's listings
+
+    cursor.execute("""
         SELECT *
+
         FROM listings
-        WHERE user_id = ?
+
+        WHERE user_id = %s
+
         ORDER BY created_at DESC
+
     """, (
         session["user_id"],
-    )).fetchall()
+    ))
 
 
-    # Count user's listings
-    listing_count = conn.execute("""
+    listings = cursor.fetchall()
+
+
+    # Count listings
+
+    cursor.execute("""
         SELECT COUNT(*)
+
         FROM listings
-        WHERE user_id = ?
+
+        WHERE user_id = %s
+
     """, (
         session["user_id"],
-    )).fetchone()[0]
+    ))
 
 
+    listing_count = cursor.fetchone()["count"]
+
+
+    cursor.close()
     conn.close()
 
 
@@ -664,6 +727,7 @@ def dashboard():
 
         listing_count=listing_count
     )
+
 
 # ==========================================
 # CREATE LISTING
@@ -756,8 +820,6 @@ def create_listing():
 
         if image and image.filename:
 
-            # Check file extension
-
             if not allowed_file(
                 image.filename
             ):
@@ -772,14 +834,10 @@ def create_listing():
                 )
 
 
-            # Secure original filename
-
             original_name = secure_filename(
                 image.filename
             )
 
-
-            # Get extension
 
             extension = (
                 original_name
@@ -788,23 +846,17 @@ def create_listing():
             )
 
 
-            # Generate unique filename
-
             image_filename = (
                 f"{uuid.uuid4().hex}."
                 f"{extension}"
             )
 
 
-            # Final save path
-
             image_path = os.path.join(
                 app.config["UPLOAD_FOLDER"],
                 image_filename
             )
 
-
-            # Save image
 
             image.save(
                 image_path
@@ -817,8 +869,10 @@ def create_listing():
 
         conn = get_db()
 
+        cursor = conn.cursor()
 
-        conn.execute("""
+
+        cursor.execute("""
             INSERT INTO listings
             (
                 user_id,
@@ -830,7 +884,15 @@ def create_listing():
                 image_filename
             )
 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s
+            )
 
         """, (
             session["user_id"],
@@ -845,6 +907,7 @@ def create_listing():
 
         conn.commit()
 
+        cursor.close()
         conn.close()
 
 
@@ -876,17 +939,27 @@ def edit_listing(listing_id):
 
     conn = get_db()
 
+    cursor = conn.cursor(
+        cursor_factory=RealDictCursor
+    )
 
-    # Get listing belonging to current user
-    listing = conn.execute("""
+
+    cursor.execute("""
         SELECT *
+
         FROM listings
-        WHERE id = ?
-        AND user_id = ?
+
+        WHERE id = %s
+
+        AND user_id = %s
+
     """, (
         listing_id,
         session["user_id"]
-    )).fetchone()
+    ))
+
+
+    listing = cursor.fetchone()
 
 
     # --------------------------------------
@@ -895,6 +968,7 @@ def edit_listing(listing_id):
 
     if listing is None:
 
+        cursor.close()
         conn.close()
 
         flash(
@@ -949,6 +1023,7 @@ def edit_listing(listing_id):
                 "Please fill in all required fields."
             )
 
+            cursor.close()
             conn.close()
 
             return redirect(
@@ -973,6 +1048,7 @@ def edit_listing(listing_id):
                 "Please enter a valid price."
             )
 
+            cursor.close()
             conn.close()
 
             return redirect(
@@ -1007,6 +1083,7 @@ def edit_listing(listing_id):
                     "Use JPG, JPEG, PNG or WEBP."
                 )
 
+                cursor.close()
                 conn.close()
 
                 return redirect(
@@ -1041,11 +1118,12 @@ def edit_listing(listing_id):
             )
 
 
-            image.save(image_path)
+            image.save(
+                image_path
+            )
 
 
-            # Delete old uploaded image
-            # if one exists.
+            # Delete old image
 
             old_filename = listing[
                 "image_filename"
@@ -1078,19 +1156,20 @@ def edit_listing(listing_id):
         # UPDATE DATABASE
         # -------------------------------
 
-        conn.execute("""
+        cursor.execute("""
             UPDATE listings
 
             SET
-                title = ?,
-                category = ?,
-                price = ?,
-                location = ?,
-                description = ?,
-                image_filename = ?
+                title = %s,
+                category = %s,
+                price = %s,
+                location = %s,
+                description = %s,
+                image_filename = %s
 
-            WHERE id = ?
-            AND user_id = ?
+            WHERE id = %s
+
+            AND user_id = %s
 
         """, (
             title,
@@ -1106,6 +1185,7 @@ def edit_listing(listing_id):
 
         conn.commit()
 
+        cursor.close()
         conn.close()
 
 
@@ -1119,6 +1199,7 @@ def edit_listing(listing_id):
         )
 
 
+    cursor.close()
     conn.close()
 
 
@@ -1127,33 +1208,48 @@ def edit_listing(listing_id):
         listing=listing
     )
 
+
 # ==========================================
 # SELLER PROFILE
 # ==========================================
 
-@app.route("/profile/<username>")
+@app.route(
+    "/profile/<username>"
+)
 def seller_profile(username):
 
     conn = get_db()
 
+    cursor = conn.cursor(
+        cursor_factory=RealDictCursor
+    )
+
+
     # Get seller
-    user = conn.execute("""
+
+    cursor.execute("""
         SELECT
             id,
             full_name,
             username,
             email,
             created_at
+
         FROM users
-        WHERE username = ?
+
+        WHERE username = %s
+
     """, (
         username,
-    )).fetchone()
+    ))
 
 
-    # Seller doesn't exist
+    user = cursor.fetchone()
+
+
     if user is None:
 
+        cursor.close()
         conn.close()
 
         return (
@@ -1162,17 +1258,26 @@ def seller_profile(username):
         )
 
 
-    # Get seller's listings
-    listings = conn.execute("""
+    # Get seller listings
+
+    cursor.execute("""
         SELECT *
+
         FROM listings
-        WHERE user_id = ?
+
+        WHERE user_id = %s
+
         ORDER BY created_at DESC
+
     """, (
         user["id"],
-    )).fetchall()
+    ))
 
 
+    listings = cursor.fetchall()
+
+
+    cursor.close()
     conn.close()
 
 
@@ -1183,7 +1288,6 @@ def seller_profile(username):
 
         listings=listings
     )
-
 # ==========================================
 # VIEW LISTING
 # ==========================================
@@ -1195,8 +1299,12 @@ def view_listing(listing_id):
 
     conn = get_db()
 
+    cursor = conn.cursor(
+        cursor_factory=RealDictCursor
+    )
 
-    listing = conn.execute("""
+
+    cursor.execute("""
         SELECT
 
             listings.*,
@@ -1213,13 +1321,17 @@ def view_listing(listing_id):
 
         ON listings.user_id = users.id
 
-        WHERE listings.id = ?
+        WHERE listings.id = %s
 
     """, (
         listing_id,
-    )).fetchone()
+    ))
 
 
+    listing = cursor.fetchone()
+
+
+    cursor.close()
     conn.close()
 
 
@@ -1236,8 +1348,8 @@ def view_listing(listing_id):
 
         listing=listing
     )
-    
-    
+
+
 # ==========================================
 # DELETE LISTING
 # ==========================================
@@ -1251,23 +1363,34 @@ def delete_listing(listing_id):
 
     conn = get_db()
 
+    cursor = conn.cursor(
+        cursor_factory=RealDictCursor
+    )
 
-    # Only retrieve listing owned
-    # by the logged-in user.
 
-    listing = conn.execute("""
+    # Only retrieve owned listing
+
+    cursor.execute("""
         SELECT *
+
         FROM listings
-        WHERE id = ?
-        AND user_id = ?
+
+        WHERE id = %s
+
+        AND user_id = %s
+
     """, (
         listing_id,
         session["user_id"]
-    )).fetchone()
+    ))
+
+
+    listing = cursor.fetchone()
 
 
     if listing is None:
 
+        cursor.close()
         conn.close()
 
         flash(
@@ -1306,11 +1429,12 @@ def delete_listing(listing_id):
     # DELETE DATABASE RECORD
     # --------------------------------------
 
-    conn.execute("""
+    cursor.execute("""
         DELETE FROM listings
 
-        WHERE id = ?
-        AND user_id = ?
+        WHERE id = %s
+
+        AND user_id = %s
 
     """, (
         listing_id,
@@ -1320,6 +1444,7 @@ def delete_listing(listing_id):
 
     conn.commit()
 
+    cursor.close()
     conn.close()
 
 
@@ -1337,10 +1462,9 @@ def delete_listing(listing_id):
 # START APPLICATION
 # ==========================================
 
-init_db()
-
-
 if __name__ == "__main__":
+
+    init_db()
 
     app.run(
         debug=False
